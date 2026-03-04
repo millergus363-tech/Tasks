@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shop & Tasks</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --accent: #e8a020;
+    --accent2: #c45c1a;
+    --text: #f0ece4;
+    --muted: #7a7570;
+    --success: #4caf50;
+    --warn: #ff9800;
+    --fail: #e53935;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #1a1208, #0f0f0f);
+    border-bottom: 2px solid var(--accent);
+    padding: 18px 16px 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  header p { color: var(--muted); font-size: 0.75rem; letter-spacing: 1px; margin-top: 2px; }
+
+  /* NAV TABS */
+  nav {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 72px; z-index: 99;
+  }
+  nav button {
+    flex: 1;
+    padding: 12px 6px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  nav button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* SECTIONS */
+  .section { display: none; padding: 16px; }
+  .section.active { display: block; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  /* TASK ITEM */
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .task-item:last-child { border-bottom: none; }
+
+  /* STATUS BUTTON */
+  .status-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .status-btn.done { border-color: var(--success); background: rgba(76,175,80,0.15); }
+  .status-btn.tried { border-color: var(--warn); background: rgba(255,152,0,0.15); }
+  .status-btn.failed { border-color: var(--fail); background: rgba(229,57,53,0.15); }
+
+  /* STATUS POPUP */
+  .status-popup {
+    display: none;
+    position: absolute;
+    left: 0; top: 44px;
+    z-index: 200;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px;
+    gap: 6px;
+    flex-direction: row;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .status-popup.show { display: flex; }
+  .status-popup button {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s;
+  }
+  .status-popup button:active { transform: scale(0.9); }
+  .pop-done { background: rgba(76,175,80,0.2); }
+  .pop-tried { background: rgba(255,152,0,0.2); }
+  .pop-fail { background: rgba(229,57,53,0.2); }
+
+  .task-text {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .task-text.done { text-decoration: line-through; color: var(--muted); }
+
+  .delete-btn {
+    width: 28px; height: 28px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .delete-btn:active { background: rgba(229,57,53,0.2); color: var(--fail); }
+
+  /* ADD INPUT ROW */
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .add-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .add-row input:focus { border-color: var(--accent); }
+  .add-row input::placeholder { color: var(--muted); }
+  .add-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    width: 46px; height: 46px;
+    color: #0f0f0f;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .add-btn:active { background: var(--accent2); }
+
+  /* BACKLOG ITEM (with date) */
+  .backlog-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .backlog-item:last-child { border-bottom: none; }
+  .backlog-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .backlog-content { flex: 1; }
+  .backlog-text { font-size: 0.95rem; }
+  .backlog-meta {
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 2px;
+    font-weight: 500;
+  }
+  .backlog-meta.overdue { color: var(--fail); }
+  .backlog-meta.soon { color: var(--warn); }
+
+  .backlog-add {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .backlog-add input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    width: 100%;
+  }
+  .backlog-add input:focus { border-color: var(--accent); }
+  .backlog-add input::placeholder { color: var(--muted); }
+  .backlog-add-row { display: flex; gap: 8px; }
+  .backlog-add-row input { flex: 1; }
+
+  /* PROJECTS */
+  .project-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .project-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .project-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .project-info { flex: 1; }
+  .project-name {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .project-summary {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .profit-pill {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .profit-pill.positive { background: rgba(76,175,80,0.2); color: var(--success); }
+  .profit-pill.negative { background: rgba(229,57,53,0.2); color: var(--fail); }
+  .profit-pill.neutral { background: rgba(122,117,112,0.2); color: var(--muted); }
+
+  .chevron {
+    color: var(--muted);
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+  }
+  .chevron.open { transform: rotate(90deg); }
+
+  .project-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 0;
+  }
+  .project-body.open { display: block; }
+
+  /* EXPENSE LIST */
+  .expense-section {
+    padding: 14px 16px;
+  }
+  .expense-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .expense-name { font-size: 0.9rem; }
+  .expense-right { display: flex; align-items: center; gap: 10px; }
+  .expense-amount { font-size: 0.9rem; font-weight: 600; color: var(--fail); }
+  .expense-del {
+    background: none; border: none; color: var(--muted);
+    font-size: 1rem; cursor: pointer; padding: 2px 4px;
+  }
+
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(232,160,32,0.07);
+    border-radius: 8px;
+    margin-top: 4px;
+    border: 1px solid rgba(232,160,32,0.2);
+  }
+  .totals-row span { font-size: 0.85rem; color: var(--muted); }
+  .totals-row strong { font-size: 0.95rem; }
+  .totals-row strong.pos { color: var(--success); }
+  .totals-row strong.neg { color: var(--fail); }
+
+  .expense-add-row {
+    display: flex; gap: 6px; margin-top: 10px;
+  }
+  .expense-add-row input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .expense-add-row input:focus { border-color: var(--accent); }
+  .expense-add-row input::placeholder { color: var(--muted); }
+  .expense-add-row input.desc { flex: 2; }
+  .expense-add-row input.amt { flex: 1; }
+  .expense-add-row button {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    color: #0f0f0f;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Sale price row */
+  .sale-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .sale-row label { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+  .sale-row input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .sale-row input:focus { border-color: var(--success); }
+  .sale-row input::placeholder { color: var(--muted); }
+
+  /* ADD PROJECT */
+  .add-project-form {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 10px;
+    display: none;
+  }
+  .add-project-form.show { display: block; }
+  .add-project-form input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    margin-bottom: 8px;
+  }
+  .add-project-form input:focus { border-color: var(--accent); }
+  .add-project-form input::placeholder { color: var(--muted); }
+  .form-row { display: flex; gap: 8px; }
+  .form-row input { margin-bottom: 0; }
+  .form-btn {
+    padding: 11px 18px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .form-btn.primary { background: var(--accent); color: #0f0f0f; flex: 1; margin-top: 8px; width: 100%; }
+  .form-btn.primary:active { background: var(--accent2); }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: 24px; right: 20px;
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #0f0f0f;
+    font-size: 1.6rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(232,160,32,0.4);
+    transition: all 0.2s;
+    z-index: 50;
+  }
+  .fab:active { transform: scale(0.92); }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .empty .icon { font-size: 2rem; margin-bottom: 8px; }
+
+  /* Overlay closer */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    z-index: 150;
+  }
+  .overlay.show { display: block; }
+
+  /* Date input style fix */
+  input[type="date"] {
+    color-scheme: dark;
+  }
+
+  .delete-project-btn {
+    background: none;
+    border: none;
+    color: var(--fail);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    opacity: 0.7;
+  }
+  .delete-project-btn:active { opacity: 1; background: rgba(229,57,53,0.1); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ TASKS</h1>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('daily')">📋 Daily</button>
+  <button onclick="showTab('backlog')">⏳ Backlog</button>
+  <button onclick="showTab('projects')">🔧 Projects</button>
+</nav>
+
+<!-- DAILY TAB -->
+<div id="daily" class="section active">
+  <div class="section-label">Today's Tasks</div>
+  <div class="card">
+    <div id="daily-list"></div>
+  </div>
+  <div class="add-row">
+    <input type="text" id="daily-input" placeholder="Add a task..." />
+    <button class="add-btn" onclick="addDaily()">+</button>
+  </div>
+</div>
+
+<!-- BACKLOG TAB -->
+<div id="backlog" class="section">
+  <div class="section-label">On The Horizon</div>
+  <div class="card">
+    <div id="backlog-list"></div>
+  </div>
+  <div class="backlog-add">
+    <input type="text" id="backlog-input" placeholder="What's pending?..." />
+    <div class="backlog-add-row">
+      <input type="date" id="backlog-date" />
+      <button class="add-btn" onclick="addBacklog()">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECTS TAB -->
+<div id="projects" class="section">
+  <div class="section-label">Equipment Projects</div>
+  <div id="project-list"></div>
+
+  <button class="fab" id="fab-btn" onclick="toggleProjectForm()">+</button>
+
+  <div class="add-project-form" id="project-form">
+    <input type="text" id="proj-name" placeholder="Item name (e.g. Troy-Bilt Mower)" />
+    <input type="text" id="proj-note" placeholder="Notes / condition..." />
+    <input type="number" id="proj-buy" placeholder="Purchase price ($)" step="0.01" />
+    <button class="form-btn primary" onclick="addProject()">Add Project</button>
+  </div>
+</div>
+
+<!-- Status popup overlay -->
+<div class="overlay" id="overlay" onclick="closePopups()"></div>
+
+<script>
+  // ── STATE ──────────────────────────────────────────────
+  let state = {
+    daily: [],
+    backlog: [],
+    projects: []
+  };
+
+  function save() {
+    try { localStorage.setItem('shopTasks', JSON.stringify(state)); } catch(e) {}
+  }
+  function load() {
+    try {
+      const d = localStorage.getItem('shopTasks');
+      if (d) state = JSON.parse(d);
+    } catch(e) {}
+    render();
+  }
+
+  // ── TABS ───────────────────────────────────────────────
+  function showTab(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('nav button')[['daily','backlog','projects'].indexOf(id)].classList.add('active');
+    closePopups();
+  }
+
+  // ── DAILY ──────────────────────────────────────────────
+  function addDaily() {
+    const inp = document.getElementById('daily-input');
+    const text = inp.value.trim();
+    if (!text) return;
+    state.daily.push({ id: Date.now(), text, status: 'none' });
+    inp.value = '';
+    save(); renderDaily();
+  }
+
+  document.getElementById('daily-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addDaily();
+  });
+
+  function setStatus(id, status) {
+    const t = state.daily.find(t => t.id === id);
+    if (t) { t.status = status; save(); renderDaily(); }
+    closePopups();
+  }
+
+  function deleteDaily(id) {
+    state.daily = state.daily.filter(t => t.id !== id);
+    save(); renderDaily();
+  }
+
+  let openPopup = null;
+  function togglePopup(id) {
+    closePopups();
+    const popup = document.getElementById('popup-' + id);
+    if (popup) {
+      popup.classList.add('show');
+      document.getElementById('overlay').classList.add('show');
+      openPopup = id;
+    }
+  }
+
+  function closePopups() {
+    document.querySelectorAll('.status-popup').forEach(p => p.classList.remove('show'));
+    document.getElementById('overlay').classList.remove('show');
+    openPopup = null;
+  }
+
+  function statusIcon(status) {
+    if (status === 'done') return '✅';
+    if (status === 'tried') return '〜';
+    if (status === 'failed') return '✗';
+    return '';
+  }
+  function statusClass(status) {
+    if (status === 'done') return 'done';
+    if (status === 'tried') return 'tried';
+    if (status === 'failed') return 'failed';
+    return '';
+  }
+
+  function renderDaily() {
+    const list = document.getElementById('daily-list');
+    if (!state.daily.length) {
+      list.innerHTML = '<div class="empty"><div class="icon">📋</div>No tasks yet. Add one below!</div>';
+      return;
+    }
+    list.innerHTML = state.daily.map(t => `
+      <div class="task-item">
+        <div class="status-btn ${statusClass(t.status)}" onclick="togglePopup(${t.id})">
+          ${statusIcon(t.status)}
+          <div class="status-popup" id="popup-${t.id}">
+            <button class="pop-done" onclick="setStatus(${t.id},'done')">✅</button>
+            <button class="pop-tried" onclick="setStatus(${t.id},'tried')">〜</button>
+            <button class="pop-fail" onclick="setStatus(${t.id},'failed')">✗</button>
+          </div>
+        </div>
+        <span class="task-text ${t.status === 'done' ? 'done' : ''}">${escHtml(t.text)}</span>
+        <button class="delete-btn" onclick="deleteDaily(${t.id})">🗑</button>
+      </div>
+    `).join('');
+  }
+
+  // ── BACKLOG ────────────────────────────────────────────
+  function addBacklog() {
+    const text = document.getElementById('backlog-input').value.trim();
+    const date = document.getElementById('backlog-date').value;
+    if (!text) return;
+    state.backlog.push({ id: Date.now(), text, date });
+    document.getElementById('backlog-input').value = '';
+    document.getElementById('backlog-date').value = '';
+    save(); renderBacklog();
+  }
+
+  document.getElementById('backlog-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addBacklog();
+  });
+
+  function deleteBacklog(id) {
+    state.backlog = state.backlog.filter(b => b.id !== id);
+    save(); renderBacklog();
+  }
+
+  function renderBacklog() {
+    const list = document.getElementById('backlog-list');
+    if (!state.backlog.length) {
+      list.innerHTML = '<div class="empty"><div class="icon">⏳</div>Nothing pending. Add items waiting on parts, deliveries, etc.</div>';
+      return;
+    }
+    const today = new Date(); today.setHours(0,0,0,0);
+    list.innerHTML = state.backlog.map(b => {
+      let meta = '';
+      let metaClass = '';
+      if (b.date) {
+        const d = new Date(b.date + 'T00:00:00');
+        const diff = Math.round((d - today) / 86400000);
+        if (diff < 0) { meta = `${Math.abs(diff)}d overdue`; metaClass = 'overdue'; }
+        else if (diff === 0) { meta = 'Due today'; metaClass = 'soon'; }
+        else if (diff <= 3) { meta = `${diff}d away`; metaClass = 'soon'; }
+        else { meta = `${diff} days away`; }
+      }
+      return `
+        <div class="backlog-item">
+          <div class="backlog-dot"></div>
+          <div class="backlog-content">
+            <div class="backlog-text">${escHtml(b.text)}</div>
+            ${meta ? `<div class="backlog-meta ${metaClass}">${meta}</div>` : ''}
+          </div>
+          <button class="delete-btn" onclick="deleteBacklog(${b.id})">🗑</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── PROJECTS ───────────────────────────────────────────
+  function toggleProjectForm() {
+    const form = document.getElementById('project-form');
+    form.classList.toggle('show');
+    const fab = document.getElementById('fab-btn');
+    fab.textContent = form.classList.contains('show') ? '×' : '+';
+  }
+
+  function addProject() {
+    const name = document.getElementById('proj-name').value.trim();
+    const note = document.getElementById('proj-note').value.trim();
+    const buy = parseFloat(document.getElementById('proj-buy').value) || 0;
+    if (!name) return;
+    state.projects.push({ id: Date.now(), name, note, buyCost: buy, salePrice: 0, expenses: [] });
+    document.getElementById('proj-name').value = '';
+    document.getElementById('proj-note').value = '';
+    document.getElementById('proj-buy').value = '';
+    toggleProjectForm();
+    save(); renderProjects();
+  }
+
+  function deleteProject(id) {
+    if (!confirm('Delete this project?')) return;
+    state.projects = state.projects.filter(p => p.id !== id);
+    save(); renderProjects();
+  }
+
+  function addExpense(projId) {
+    const desc = document.getElementById(`exp-desc-${projId}`).value.trim();
+    const amt = parseFloat(document.getElementById(`exp-amt-${projId}`).value) || 0;
+    if (!desc || !amt) return;
+    const proj = state.projects.find(p => p.id === projId);
+    if (proj) {
+      proj.expenses.push({ id: Date.now(), desc, amt });
+      document.getElementById(`exp-desc-${projId}`).value = '';
+      document.getElementById(`exp-amt-${projId}`).value = '';
+      save(); renderProjects();
+    }
+  }
+
+  function deleteExpense(projId, expId) {
+    const proj = state.projects.find(p => p.id === projId);
+    if (proj) { proj.expenses = proj.expenses.filter(e => e.id !== expId); save(); renderProjects(); }
+  }
+
+  function updateSale(projId, val) {
+    const proj = state.projects.find(p => p.id === projId);
+    if (proj) { proj.salePrice = parseFloat(val) || 0; save(); renderProjects(); }
+  }
+
+  function toggleProject(id) {
+    const body = document.getElementById(`proj-body-${id}`);
+    const chev = document.getElementById(`chev-${id}`);
+    body.classList.toggle('open');
+    chev.classList.toggle('open');
+  }
+
+  function calcProfit(proj) {
+    const totalExp = proj.expenses.reduce((s, e) => s + e.amt, 0) + (proj.buyCost || 0);
+    return proj.salePrice - totalExp;
+  }
+
+  function renderProjects() {
+    const list = document.getElementById('project-list');
+    if (!state.projects.length) {
+      list.innerHTML = '<div class="empty"><div class="icon">🔧</div>No projects yet. Tap + to add equipment you\'re working on.</div>';
+      return;
+    }
+    list.innerHTML = state.projects.map(proj => {
+      const totalExp = proj.expenses.reduce((s, e) => s + e.amt, 0) + (proj.buyCost || 0);
+      const profit = proj.salePrice - totalExp;
+      const hasSale = proj.salePrice > 0;
+      const pillClass = !hasSale ? 'neutral' : profit >= 0 ? 'positive' : 'negative';
+      const pillText = !hasSale ? 'No sale set' : (profit >= 0 ? `+$${profit.toFixed(2)}` : `-$${Math.abs(profit).toFixed(2)}`);
+
+      return `
+      <div class="project-card">
+        <div class="project-header" onclick="toggleProject(${proj.id})">
+          <div class="project-icon">🔧</div>
+          <div class="project-info">
+            <div class="project-name">${escHtml(proj.name)}</div>
+            <div class="project-summary">${proj.note ? escHtml(proj.note) : 'In cost: $' + totalExp.toFixed(2)}</div>
+          </div>
+          <div class="profit-pill ${pillClass}">${pillText}</div>
+          <span class="chevron" id="chev-${proj.id}">▶</span>
+        </div>
+        <div class="project-body" id="proj-body-${proj.id}">
+          <div class="expense-section">
+            <div class="expense-label">Purchase & Expenses</div>
+            ${proj.buyCost ? `<div class="expense-item"><span class="expense-name">🛒 Purchase price</span><span class="expense-amount">$${proj.buyCost.toFixed(2)}</span></div>` : ''}
+            ${proj.expenses.map(e => `
+              <div class="expense-item">
+                <span class="expense-name">${escHtml(e.desc)}</span>
+                <div class="expense-right">
+                  <span class="expense-amount">$${e.amt.toFixed(2)}</span>
+                  <button class="expense-del" onclick="deleteExpense(${proj.id},${e.id})">✕</button>
+                </div>
+              </div>
+            `).join('')}
+            <div class="expense-add-row">
+              <input class="desc" type="text" id="exp-desc-${proj.id}" placeholder="Part / expense..." />
+              <input class="amt" type="number" id="exp-amt-${proj.id}" placeholder="$" step="0.01" />
+              <button onclick="addExpense(${proj.id})">+</button>
+            </div>
+            <div class="totals-row">
+              <span>Total in:</span>
+              <strong>$${totalExp.toFixed(2)}</strong>
+            </div>
+          </div>
+          <div class="sale-row">
+            <label>Sale Price $</label>
+            <input type="number" placeholder="0.00" step="0.01"
+              value="${proj.salePrice || ''}"
+              onchange="updateSale(${proj.id}, this.value)"
+              oninput="updateSale(${proj.id}, this.value)" />
+            <strong class="${profit >= 0 ? 'pos' : 'neg'}" style="white-space:nowrap; font-size:0.95rem;">
+              ${hasSale ? (profit >= 0 ? '✅ +$'+profit.toFixed(2) : '❌ -$'+Math.abs(profit).toFixed(2)) : '—'}
+            </strong>
+          </div>
+          <div style="text-align:right; padding: 4px 16px 14px;">
+            <button class="delete-project-btn" onclick="deleteProject(${proj.id})">🗑 Remove project</button>
+          </div>
+        </div>
+      </div>
+      `;
+    }).join('');
+  }
+
+  // ── UTILS ──────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function render() { renderDaily(); renderBacklog(); renderProjects(); }
+
+  // ── INIT ───────────────────────────────────────────────
+  load();
+
+  // Set today's date as default for backlog
+  const today = new Date();
+  document.getElementById('backlog-date').valueAsDate = today;
+</script>
+</body>
+</html>
